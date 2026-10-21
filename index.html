@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinematic AI Studio</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090a0f;color:#f5f5fa;font-family:Arial,sans-serif}
+header{padding:22px 6%;border-bottom:1px solid #242530;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:20px;font-weight:800;letter-spacing:-.7px}
+.logo span{color:#b69aff}
+.tag{font-size:12px;color:#b9b7c7;border:1px solid #343340;border-radius:20px;padding:8px 12px}
+main{max-width:1100px;margin:45px auto;padding:0 22px}
+h1{font-size:clamp(32px,6vw,56px);letter-spacing:-2px;margin:10px 0}
+.intro{color:#aaaabb;line-height:1.6}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px}
+.panel{background:#12131c;border:1px solid #292a37;border-radius:18px;padding:22px;min-width:0}
+h2{font-size:16px;margin:0 0 18px}
+label{display:block;color:#c8c6d4;font-size:13px;margin:18px 0 9px}
+textarea,select{width:100%;background:#0b0c12;color:white;border:1px solid #343542;border-radius:10px;padding:13px;font:inherit}
+textarea{min-height:125px;resize:vertical;line-height:1.5}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button,.upload{border:1px solid #383847;border-radius:10px;padding:12px;background:#20212d;color:white;cursor:pointer;font-weight:600;font-size:13px}
+button:hover,.upload:hover{border-color:#ad91ff}
+.generate{width:100%;margin-top:20px;background:#b59aff;color:#171020;border:0;padding:15px;font-size:15px}
+.generate:hover{background:#c7b4ff}
+.preview{background:radial-gradient(ellipse at 50% 20%,#393052 0%,#191726 35%,#0c0d14 75%);border:1px solid #34303f;border-radius:13px;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.preview img{width:100%;height:100%;object-fit:contain}
+.empty{text-align:center;color:#b4adc9;padding:20px}
+.empty .symbol{font-size:38px;margin-bottom:12px}
+.status{color:#b9b2ce;font-size:12px;line-height:1.6;margin-top:15px;overflow-wrap:anywhere}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.preset{padding:9px 12px;border-radius:30px;font-weight:400}
+.preset.active{background:#b59aff;color:#171020;border-color:#b59aff}
+footer{text-align:center;color:#777789;font-size:12px;padding:35px 15px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}main{margin-top:30px}header{padding:18px 5%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CINEMATIC<span>AI</span></div>
+  <div class="tag">PERSONAL STUDIO · BETA</div>
+</header>
+<main>
+  <p class="intro">YOUR IMAGINATION, YOUR CAMERA.</p>
+  <h1>Make your next<br>scene cinematic.</h1>
+  <p class="intro">Design your shot. Choose your camera movement.<br>Your personal AI video workspace starts here.</p>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>01 / Create your scene</h2>
+      <label for="prompt">Describe your video</label>
+      <textarea id="prompt" placeholder="A lone astronaut walking across a vast desert at sunset, cinematic lighting..."></textarea>
+
+      <label>Camera movement</label>
+      <div class="presets" id="presets">
+        <button class="preset active" data-shot="Slow cinematic dolly-in">Dolly In</button>
+        <button class="preset" data-shot="Smooth camera orbit around the subject">Orbit</button>
+        <button class="preset" data-shot="Slow horizontal cinematic pan">Pan</button>
+        <button class="preset" data-shot="Dramatic cinematic zoom-in">Zoom In</button>
+        <button class="preset" data-shot="Smooth tracking shot following the subject">Tracking</button>
+      </div>
+
+      <div class="controls">
+        <div>
+          <label for="ratio">Aspect ratio</label>
+          <select id="ratio">
+            <option value="16:9">16:9 Landscape</option>
+            <option value="9:16">9:16 Vertical</option>
+            <option value="1:1">1:1 Square</option>
+          </select>
+        </div>
+        <div>
+          <label for="duration">Clip length</label>
+          <select id="duration">
+            <option>5 seconds</option>
+            <option>10 seconds</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="image">Starting image (optional)</label>
+      <input id="image" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+      <button class="upload" id="upload">＋ Upload an image</button>
+      <div id="filename" class="status">PNG, JPG or WebP</div>
+
+      <button class="generate" id="generate">✦ Prepare my scene</button>
+      <p class="status" id="status">Studio interface ready. AI generation is not connected yet.</p>
+    </section>
+
+    <section class="panel">
+      <h2>02 / Scene preview</h2>
+      <div class="preview" id="preview">
+        <div class="empty">
+          <div class="symbol">✧</div>
+          <div>Your cinematic scene</div>
+          <p class="status">Upload an image to preview it here.</p>
+        </div>
+      </div>
+      <label>Shot summary</label>
+      <div class="status" id="summary">Camera: Dolly In · Ratio: 16:9</div>
+      <label>Full prompt</label>
+      <div class="status" id="fullprompt">Your prompt will appear here.</div>
+      <button id="copy" style="width:100%;margin-top:16px">Copy shot prompt</button>
+    </section>
+  </div>
+</main>
+<footer>Made for creators · CINEMATIC AI STUDIO</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+let shot = "Slow cinematic dolly-in";
+let imageURL = "";
+let uploadedFile = null;
+
+function updateSummary(){
+  $("summary").textContent = "Camera: " + shot + " · Ratio: " + $("ratio").value;
+  const prompt = $("prompt").value.trim() || "No scene description yet";
+  $("fullprompt").textContent = prompt + ". Camera: " + shot +
+    ". Aspect ratio: " + $("ratio").value +
+    ". Duration: " + $("duration").value + ".";
+}
+
+$("presets").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-shot]");
+  if(!btn) return;
+  shot = btn.dataset.shot;
+  document.querySelectorAll(".preset").forEach(b =>
+    b.classList.toggle("active", b === btn));
+  updateSummary();
+});
+
+$("prompt").addEventListener("input", updateSummary);
+$("ratio").addEventListener("change", updateSummary);
+$("duration").addEventListener("change", updateSummary);
+
+$("upload").onclick = () => $("image").click();
+$("image").onchange = () => {
+  const file = $("image").files[0];
+  if(!file) return;
+  if(imageURL) URL.revokeObjectURL(imageURL);
+  uploadedFile = file;
+  imageURL = URL.createObjectURL(file);
+  $("filename").textContent = file.name;
+  $("preview").innerHTML = "";
+  const img = document.createElement("img");
+  img.src = imageURL;
+  img.alt = "Your uploaded starting image";
+  $("preview").appendChild(img);
+  $("status").textContent = "Image loaded locally. No AI video has been generated.";
+};
+
+$("generate").onclick = () => {
+  updateSummary();
+  $("status").textContent =
+    "Your shot settings are ready! This is a UI demo: connect a compatible AI video model to generate a real clip.";
+};
+
+$("copy").onclick = async () => {
+  updateSummary();
+  const text = $("fullprompt").textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("status").textContent = "Shot prompt copied!";
+  } catch(e) {
+    $("status").textContent = "Select and copy the shot prompt displayed in the preview panel.";
+  }
+};
+
+updateSummary();
+</script>
+</body>
+</html>
